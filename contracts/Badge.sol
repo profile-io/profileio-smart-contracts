@@ -1,26 +1,23 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "./utils/PercentageMath.sol";
 
-contract Badge is ERC721 {
+contract Badge is ERC721URIStorage {
     using PercentageMath for uint256;
 
-    string creatorDID;
     string public baseTokenURI;
 
-    uint256 badgeID = 1;
-    uint256 public bagdeCount;
+    uint256 public badgeCount;
     uint256 public mintFee; // basis points
 
-    address creator;
+    address public creator;
 
     address constant FEE_COLLECTOR = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4;
     uint256 constant FEE_ROYALTY = 1_000;
 
     constructor(
-        string memory _creatorDID,
         string memory _baseTokenURI,
         string memory _name,
         string memory _symbol,
@@ -28,7 +25,6 @@ contract Badge is ERC721 {
         address _creator
     )   ERC721(_name, _symbol)
     {
-        creatorDID = _creatorDID;
         baseTokenURI = _baseTokenURI;
         mintFee = _mintFee;
         creator = _creator;
@@ -54,8 +50,8 @@ contract Badge is ERC721 {
             require(sent, 'Failed to transfer fee');
         }
 
-        _safeMint(msg.sender, badgeID);
-        badgeID++;
+        badgeCount++;
+        _safeMint(msg.sender, badgeCount);
 
         return true;
     }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import "./Badge.sol";
 
@@ -14,7 +14,6 @@ contract BadgeFactory {
     }
 
     /**
-     * @param _creatorDID The DID of the user creating the Badge.
      * @param _baseTokenURI The URI of the Badge data with tokenId omitted
      * (e.g., https://api.pudgypenguins.io/lil/<tokenId>).
      * @param _name The name of the Badge (e.g., Certified Python Developer).
@@ -22,8 +21,7 @@ contract BadgeFactory {
      * @param _mintFee The fee to mint the badge (can be zero).
      * @param _owner The owner of the newly deployed Badge contract (can amend fee, revoke, etc.).
      */
-    function createBadge(
-        string memory _creatorDID,
+    function create(
         string memory _baseTokenURI,
         string memory _name,
         string memory _symbol,
@@ -33,7 +31,6 @@ contract BadgeFactory {
         returns (address)
     {
         Badge badge = new Badge(
-            _creatorDID,
             _baseTokenURI,
             _name,
             _symbol,

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import "./interfaces/IBadgeFactory.sol";
 
@@ -11,7 +11,7 @@ contract BadgeManager {
 
     uint256 creationFee;
 
-    error InsufficientFee();
+    error InvalidFee();
 
     constructor(
         IBadgeFactory _badgeFactory
@@ -21,8 +21,7 @@ contract BadgeManager {
         authorized[msg.sender] = true;
     }
 
-    function createBadge(
-        string memory _creatorDID,
+    function create(
         string memory _baseTokenURI,
         string memory _name,
         string memory _symbol,
@@ -32,11 +31,10 @@ contract BadgeManager {
         returns (address)
     {
         if (msg.value != creationFee) {
-            revert InsufficientFee();
+            revert InvalidFee();
         }
 
         return badgeFactory.createBadge(
-            _creatorDID,
             _baseTokenURI,
             _name,
             _symbol,
@@ -49,4 +47,13 @@ contract BadgeManager {
         require(authorized[msg.sender] == true, 'Caller not authorized');
         _;
     }
+
+    // function issueBadge
+
+    // function setMinter(
+    //     address[] memory accounts,
+    //     bool active
+    // ) {
+        
+    // }
 }

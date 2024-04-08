@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 interface IBadgeFactory {
 
     function createBadge(
-        string memory _creatorDID,
         string memory _baseTokenURI,
         string memory _name,
         string memory _symbol,
