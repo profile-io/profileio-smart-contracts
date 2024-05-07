@@ -7,16 +7,14 @@ async function main() {
     const accounts = await ethers.getSigners()
     const owner = accounts[0]
 
-    const Badge = await ethers.getContractFactory('Badge')
-    const badge = await Badge.deploy(
-        "https://api.pudgypenguins.io/lil/",
-        "Profile.io Badge",
-        "PRFL",
-        0,
-        owner.getAddress()
+    const ERC20Token = await ethers.getContractFactory('ERC20Token')
+    const erc20Token = await ERC20Token.deploy(
+        "Test USDC",
+        "USDC",
+        6
     )
-    await badge.waitForDeployment()
-    console.log('Badge NFT contract deployed to: ', await badge.getAddress())
+    await erc20Token.waitForDeployment()
+    console.log('Contract deployed to: ', await erc20Token.getAddress())
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -3,11 +3,24 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./interfaces/IBadgeManager.sol";
 
+/**
+     ____  ____  ____  _____ _  _     _____   _  ____ 
+    /  __\/  __\/  _ \/    // \/ \   /  __/  / \/  _ \
+    |  \/||  \/|| / \||  __\| || |   |  \    | || / \|
+    |  __/|    /| \_/|| |   | || |_/\|  /_ __| || \_/|
+    \_/   \_/\_\\____/\_/   \_/\____/\____\\/\_/\____/
+
+    @author Sam Goodenough, Tabled Technologies Ltd.
+    @title  Badge
+    @notice Soul-bound NFT Badge Contract issued by Profile.io.
+ */
 
 contract Badge is ERC721URIStorage, Ownable2Step {
     uint256 private _tokenIdCounter;
+
+    IBadgeManager badgeManager;
 
     /// @dev We know the owner of the tokenId by calling ownerOf().
     // E.g., tokenId => endorsements: [Bob, Charlie, Dave, ...].
@@ -17,34 +30,22 @@ contract Badge is ERC721URIStorage, Ownable2Step {
     // E.g., Bob => tokenId => Y.
     mapping(address => mapping(uint256 => uint8)) public endorsed;
 
-    mapping(uint256 => string) pointer;
-
-    uint256 public mintFee;
-
-    IERC20 public mintPayment;
-
-    address public feeCollector;
-
     error EndorsementNotFound();
 
     /**
      * @param _owner The initial owner of the NFT contract.
-     * @param _mintPayment The ERC20 token used for payment.
-     * @param _mintFee The payment amount.
+     * @param _badgeManager The Badge Manager contract.
      */
     constructor(
         address _owner,
-        IERC20 _mintPayment,
-        uint256 _mintFee
+        IBadgeManager _badgeManager
     )   ERC721("Profile.io Badge", "BADGE") Ownable(_owner)
     {
-        feeCollector = _owner;
-        mintPayment = _mintPayment;
-        mintFee = _mintFee;
+        badgeManager = _badgeManager;
     }
 
     /*//////////////////////////////////////////////////////////////
-                            TOKEN MANAGEMENT
+                            BADGE MANAGEMENT
     //////////////////////////////////////////////////////////////*/
 
     /**
@@ -61,15 +62,7 @@ contract Badge is ERC721URIStorage, Ownable2Step {
     )   public onlyOwner
         returns (uint256 tokenId)
     {
-        if (mintFee > 0) {
-            // Transfer mint fee to fee collector.
-            SafeERC20.safeTransferFrom(
-                mintPayment, // The ERC20 token used for payment.
-                payer, // The account making the payment.
-                owner(), // The account receiving the fee.
-                mintFee // The mint fee being paid in wei.
-            );
-        }
+        badgeManager.transferMintPayment(payer);
 
         // Store tokenId locally in database.
         tokenId = _tokenIdCounter;
@@ -108,20 +101,22 @@ contract Badge is ERC721URIStorage, Ownable2Step {
                             ENDORSEMENTS
     //////////////////////////////////////////////////////////////*/
 
+    /// @return total The new total number of endorsements for the provided tokenId.
     function endorse(
         uint256 tokenId
     )   external
-        returns (uint256)
+        returns (uint256 total)
     {
         endorsements[tokenId].push(msg.sender);
         endorsed[msg.sender][tokenId] = 1;
         return endorsements[tokenId].length;
     }
 
+    /// @return total The new total number of endorsements for the provided tokenId.
     function revokeEndorsement(
         uint256 tokenId
     )   external
-        returns (uint256)
+        returns (uint256 total)
     {
         for (uint i = 0; i < endorsements[tokenId].length; i++) {
             if (endorsements[tokenId][i] == msg.sender) {
@@ -148,7 +143,7 @@ contract Badge is ERC721URIStorage, Ownable2Step {
 
     /**
      * @dev Enables owner to manually set the tokenURI for a given tokenId.
-     * Useful if the API endpoint has been modified on the backend.
+     * Useful if the API endpoint has been modified.
      */
     function setTokenURI(
         uint256 tokenId,
@@ -157,26 +152,5 @@ contract Badge is ERC721URIStorage, Ownable2Step {
     {
         _requireOwned(tokenId);
         _setTokenURI(tokenId, _tokenURI);
-    }
-
-    function setMintPayment(
-        IERC20 _mintPayment
-    )   external onlyOwner
-    {
-        mintPayment = _mintPayment;
-    }
-
-    function setMintFee(
-        uint256 _mintFee
-    )   external onlyOwner
-    {
-        mintFee = _mintFee;
-    }
-
-    function setFeeCollector(
-        address _feeCollector
-    )   external onlyOwner
-    {
-        feeCollector = _feeCollector;
     }
 }

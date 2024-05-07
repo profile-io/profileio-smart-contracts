@@ -2,7 +2,7 @@ require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 const { TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS } = require("hardhat/builtin-tasks/task-names");
 
-const { INFURA_API_KEY, PRIV_KEY, ETHERSCAN_API_KEY } = process.env;
+const { INFURA_API_KEY, PRIV_KEY, ETHERSCAN_API_KEY, POLYGONSCAN_API_KEY } = process.env;
 
 // Add a subtask that sets the action for the TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS task
 subtask(TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS).setAction(async (_, __, runSuper) => {
@@ -21,10 +21,25 @@ module.exports = {
       url: `https://eth-sepolia.g.alchemy.com/v2/${INFURA_API_KEY}`,
       accounts: [`${PRIV_KEY}`],
     },
+    polygonAmoy: {
+      url: `https://polygon-amoy.infura.io/v3/${INFURA_API_KEY}`,
+      accounts: [`${PRIV_KEY}`],
+    }
   },
   etherscan: {
     apiKey: {
       sepolia: `${ETHERSCAN_API_KEY}`,
-    }
+      polygonAmoy: `${POLYGONSCAN_API_KEY}`
+    },
+    customChains: [
+      {
+        network: "polygonAmoy",
+        chainId: 80002,
+        urls: {
+          apiURL: "https://api-amoy.polygonscan.com/api",
+          browserURL: "https://amoy.polygonscan.com/"
+        }
+      }
+    ]
   }
 };
