@@ -53,8 +53,7 @@ contract BadgeManager is Ownable2Step {
             mintPayment,
             _from,
             feeCollector,
-            // If custom mintFee has been set for the Badge use that, otherwise use default.
-            mintFee[msg.sender] == 0 ? defaultMintFee : mintFee[msg.sender]
+            getMintFee(msg.sender)
         );
         return true;
     }
@@ -62,9 +61,10 @@ contract BadgeManager is Ownable2Step {
     /// @dev Use to check against the allowance prior to minting Badge.
     function getMintFee(
         address _badge
-    )   external view
+    )   public view
         returns (uint256)
     {
+        // If custom mintFee has been set for the Badge use that, otherwise use default.
         return mintFee[_badge] == 0 ? defaultMintFee : mintFee[_badge];
     }
 

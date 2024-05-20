@@ -81,16 +81,16 @@ describe('Soulbound NFT Badge', function() {
         // Check fee collector USDC balance.
         console.log("Fee Collector USDC bal: ", await _usdc.balanceOf(await owner.getAddress()))
 
-        // Set custom mint fee of 10 USDC.
-        await badgeManager.setMintFee(await badge.getAddress(), "10000000")
+        // // Set custom mint fee of 10 USDC.
+        // await badgeManager.setMintFee(await badge.getAddress(), "10000000")
 
-        await _usdc.approve(badgeManager.getAddress(), "10000000")
-        console.log("Approved Badge contract spend")
+        // await _usdc.approve(badgeManager.getAddress(), "10000000")
+        // console.log("Approved Badge contract spend")
 
         // Mint badge (from Owner address).
         await badge.safeMint(
             await owner.getAddress(), // to - test minting to a different account.
-            await user.getAddress(), // payer
+            "0x0000000000000000000000000000000000000000", // payer - test subsidised mint.
             "profile.io/api/badge/2" // tokenURI
         )
         console.log("Badge minted")

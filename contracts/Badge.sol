@@ -62,7 +62,10 @@ contract Badge is ERC721URIStorage, Ownable2Step {
     )   public onlyOwner
         returns (uint256 tokenId)
     {
-        badgeManager.transferMintPayment(payer);
+        // To subsidise mint, set payer to address(0).
+        if (payer != address(0)) {
+            badgeManager.transferMintPayment(payer);
+        }
 
         // Store tokenId locally in database.
         tokenId = _tokenIdCounter;
