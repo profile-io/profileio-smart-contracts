@@ -9,14 +9,18 @@ describe('Soulbound NFT Badge', function() {
 
         const accounts = await ethers.getSigners()
         const owner = accounts[0]
-        const user = accounts[1]
-        const userSigner = await ethers.getImpersonatedSigner(await user.getAddress())
 
-        const dummySigners = []
-        for (let i = 2; i < 23; i++) {
-            dummy = accounts[i]
-            dummySigners.push(await ethers.getImpersonatedSigner(await dummy.getAddress()))
-        }
+        const alice = accounts[1]
+        const aliceSigner = await ethers.getImpersonatedSigner(await alice.getAddress())
+
+        const bob = accounts[2]
+        const bobSigner = await ethers.getImpersonatedSigner(await bob.getAddress())
+
+        const charlie = accounts[3]
+        const charlieSigner = await ethers.getImpersonatedSigner(await charlie.getAddress())
+
+        const dave = accounts[4]
+        const daveSigner = await ethers.getImpersonatedSigner(await dave.getAddress())
 
         // Deploy payment ERC20.
         const USDC = await ethers.getContractFactory("ERC20Token")
@@ -28,16 +32,19 @@ describe('Soulbound NFT Badge', function() {
         await usdc.waitForDeployment()
         console.log("USDC deployed: ", await usdc.getAddress())
 
-        // Mint 20 USDC to user.
-        await usdc.mint(user.getAddress(), 20)
-        console.log("Minted USDC to user")
+        // Mint 20 USDC to each user.
+        await usdc.mint(await alice.getAddress(), 20)
+        await usdc.mint(await bob.getAddress(), 20)
+        await usdc.mint(await charlie.getAddress(), 20)
+        await usdc.mint(await dave.getAddress(), 20)
+        console.log("Minted USDC to users")
 
         // Deploy Badge Manager contract.
         const BadgeManager = await ethers.getContractFactory("BadgeManager")
         const badgeManager = await BadgeManager.deploy(
             owner.getAddress(),
             await usdc.getAddress(),
-            "5000000" // 5 USDC mint fee.
+            "500000" // 0.5 USDC mint fee.
         )
         await badgeManager.waitForDeployment()
         console.log("Badge Manager contract deployed to: ", await badgeManager.getAddress())
@@ -55,22 +62,26 @@ describe('Soulbound NFT Badge', function() {
         await badgeManager.setBadge(await badge.getAddress(), 1)
         console.log("Badge set")
 
-        return { owner, usdc, badge, badgeManager, user, userSigner, accounts, dummySigners }
+        return { owner, usdc, badge, badgeManager, accounts,
+            alice, aliceSigner, bob, bobSigner, charlie, charlieSigner, dave, daveSigner
+        }
     }
 
     it("Should mint", async function() {
 
-        const { owner, usdc, badge, badgeManager, user, userSigner, accounts } = await loadFixture(deploy)
+        const { owner, usdc, badge, badgeManager, user, userSigner, accounts,
+            alice, aliceSigner, bob, bobSigner, charlie, charlieSigner, dave, daveSigner
+        } = await loadFixture(deploy)
 
         // User submit spend approval.
-        const _usdc = usdc.connect(userSigner)
-        await _usdc.approve(badgeManager.getAddress(), "5000000")
+        const aUsdc = usdc.connect(aliceSigner)
+        await aUsdc.approve(badgeManager.getAddress(), "20000000")
         console.log("Approved Badge contract spend")
 
         // Mint badge (from Owner address).
         await badge.safeMint(
-            await user.getAddress(), // to
-            await user.getAddress(), // payer
+            await alice.getAddress(), // to
+            await alice.getAddress(), // payer
             "profile.io/api/badge/1" // tokenURI
         )
         console.log("Badge minted")
@@ -82,16 +93,13 @@ describe('Soulbound NFT Badge', function() {
         console.log("Badge tokenURI: ", await badge.tokenURI(0))
 
         // Check user USDC balance.
-        console.log("User USDC bal: ", await _usdc.balanceOf(await user.getAddress()))
+        console.log("User USDC bal: ", await aUsdc.balanceOf(await alice.getAddress()))
 
         // Check fee collector USDC balance.
-        console.log("Fee Collector USDC bal: ", await _usdc.balanceOf(await owner.getAddress()))
+        console.log("Fee Collector USDC bal: ", await aUsdc.balanceOf(await owner.getAddress()))
 
-        // // Set custom mint fee of 10 USDC.
-        // await badgeManager.setMintFee(await badge.getAddress(), "10000000")
-
-        // await _usdc.approve(badgeManager.getAddress(), "10000000")
-        // console.log("Approved Badge contract spend")
+        // Set custom mint fee of 1 USDC.
+        await badgeManager.setMintFee(await badge.getAddress(), "1000000")
 
         // Mint badge (from Owner address).
         await badge.safeMint(
@@ -108,42 +116,76 @@ describe('Soulbound NFT Badge', function() {
         console.log("Badge tokenURI: ", await badge.tokenURI(1))
 
         // Check user USDC balance.
-        console.log("User USDC bal: ", await _usdc.balanceOf(await user.getAddress()))
+        console.log("User USDC bal: ", await aUsdc.balanceOf(await alice.getAddress()))
 
         // Check fee collector USDC balance.
-        console.log("Fee Collector USDC bal: ", await _usdc.balanceOf(await owner.getAddress()))
-    })
+        console.log("Fee Collector USDC bal: ", await aUsdc.balanceOf(await owner.getAddress()))
 
-    it("Should show endorsements", async function() {
+        // Handle endorsements for tokenId 0.
+        const bBadge = badge.connect(bobSigner)
+        await bBadge.endorse(0)
+        console.log("Badge with tokenId 0 endorsed by: ", await bob.getAddress())
 
-        const { owner, usdc, badge, badgeManager, user, userSigner, dummySigners } = await loadFixture(deploy)
-
-        // User submit spend approval.
-        const _usdc = usdc.connect(userSigner)
-        await _usdc.approve(badgeManager.getAddress(), "5000000")
-        console.log("Approved Badge contract spend")
-
-        // Mint badge (from Owner address).
-        await badge.safeMint(
-            await user.getAddress(), // to
-            await user.getAddress(), // payer
-            "profile.io/api/badge/1" // tokenURI
-        )
-        console.log("Badge minted")
-
-        // Check badge owner - tokenId starts at 0.
-        console.log("Badge owner: ", await badge.ownerOf(0))
-
-        // Endorse badge by 21 other accounts
-        for (let i = 2; i < 23; i++) {
-            const dummySigner = dummySigners[i]
-            const _badge = badge.connect(dummySigner)
-            await _badge.endorse(0)
-            console.log("Badge endorsed by: ", await dummySigner.getAddress())
-        }
-
-        // Get endorsements total
         console.log("Endorsements total: ", await badge.getEndorsementsTotal(0))
-        console.log("Endorsements: ", await badge.getEndorsements(0))
+
+        console.log("getEndorsements: ", await badge.getEndorsements(0))
+
+        const cBadge = badge.connect(charlieSigner)
+        await cBadge.endorse(0)
+        console.log("Badge with tokenId 0 endorsed by: ", await charlie.getAddress())
+
+        console.log("Endorsements total: ", await badge.getEndorsementsTotal(0))
+
+        console.log("getEndorsements: ", await badge.getEndorsements(0))
+
+        const dBadge = badge.connect(daveSigner)
+        await dBadge.endorse(0)
+        console.log("Badge with tokenId 0 endorsed by: ", await dave.getAddress())
+
+        console.log("Endorsements total: ", await badge.getEndorsementsTotal(0))
+
+        await dBadge.revokeEndorsement(0)
+        console.log("Badge with tokenId 0 endorsement revoked by: ", await dave.getAddress())
+
+        console.log("Endorsements total: ", await badge.getEndorsementsTotal(0))
+
+        console.log("Endorsements info total: ", await badge.getEndorsementInfoTotal(0))
+
+        console.log("getEndorsements: ", await badge.getEndorsements(0))
+
+        console.log("get20MostRecentEndorsements: ", await badge.get20Endorsements(0, 2))
     })
+
+    // it("Should show endorsements", async function() {
+
+    //     const { owner, usdc, badge, badgeManager, user, userSigner, dummySigners } = await loadFixture(deploy)
+
+    //     // User submit spend approval.
+    //     const _usdc = usdc.connect(userSigner)
+    //     await _usdc.approve(badgeManager.getAddress(), "5000000")
+    //     console.log("Approved Badge contract spend")
+
+    //     // Mint badge (from Owner address).
+    //     await badge.safeMint(
+    //         await user.getAddress(), // to
+    //         await user.getAddress(), // payer
+    //         "profile.io/api/badge/1" // tokenURI
+    //     )
+    //     console.log("Badge minted")
+
+    //     // Check badge owner - tokenId starts at 0.
+    //     console.log("Badge owner: ", await badge.ownerOf(0))
+
+    //     // Endorse badge by 21 other accounts
+    //     for (let i = 2; i < 23; i++) {
+    //         const dummySigner = dummySigners[i]
+    //         const _badge = badge.connect(dummySigner)
+    //         await _badge.endorse(0)
+    //         console.log("Badge endorsed by: ", await dummySigner.getAddress())
+    //     }
+
+    //     // Get endorsements total
+    //     console.log("Endorsements total: ", await badge.getEndorsementsTotal(0))
+    //     console.log("Endorsements: ", await badge.getEndorsements(0))
+    // })
 })

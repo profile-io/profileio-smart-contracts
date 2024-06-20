@@ -84,6 +84,15 @@ contract Badge is ERC721URIStorage, Ownable2Step {
         tokenId = _tokenIdCounter;
         _setTokenURI(tokenId, _tokenURI);
         _safeMint(to, tokenId);
+
+        // Instantiate the endorsementInfo array.
+        EndorsementInfo memory endorsement = EndorsementInfo({
+            timestamp: block.timestamp,
+            sender: to,
+            status: EndorsementStatus(1)
+        });
+        endorsementInfo[tokenId].push(endorsement);
+
         _tokenIdCounter += 1;
     }
 
@@ -119,14 +128,17 @@ contract Badge is ERC721URIStorage, Ownable2Step {
             "Badge: Cannot endorse own badge"
         );
 
-        EndorsementInfo memory endorsement = checkEndorsementInfo(msg.sender, tokenId);
+        EndorsementInfo memory endorsement = checkEndorsementInfo(
+            msg.sender,
+            tokenId
+        );
 
         if (endorsement.status == EndorsementStatus(0)) {
             return _endorse(tokenId);
         } else if (endorsement.status == EndorsementStatus(2)) {
             return _endorseUpdate(tokenId);
         } else {
-            revert ("Badge: Already endorsed");
+            revert("Badge: Already endorsed");
         }
     }
 
@@ -138,7 +150,8 @@ contract Badge is ERC721URIStorage, Ownable2Step {
             status: EndorsementStatus(1)
         });
 
-        endorsementInfoIndex[msg.sender][tokenId] = endorsementInfo[tokenId].length;
+        endorsementInfoIndex[msg.sender][tokenId] = endorsementInfo[tokenId]
+            .length;
         endorsementInfo[tokenId].push(endorsement);
 
         emit Endorsed(msg.sender, tokenId);
@@ -162,6 +175,11 @@ contract Badge is ERC721URIStorage, Ownable2Step {
     function revokeEndorsement(
         uint256 tokenId
     ) external returns (uint256 total) {
+        require(
+            ownerOf(tokenId) != msg.sender,
+            "Badge: Cannot revoke endorsement of own badge"
+        );
+
         uint i = endorsementInfoIndex[msg.sender][tokenId];
 
         require(
@@ -184,10 +202,10 @@ contract Badge is ERC721URIStorage, Ownable2Step {
         address sender,
         uint256 tokenId
     ) public view returns (EndorsementInfo memory endorsement) {
-        uint i = endorsementInfoIndex[msg.sender][tokenId];
+        uint i = endorsementInfoIndex[sender][tokenId];
 
-        /// @dev Index default is 0.
-        if (endorsementInfo[tokenId][i].sender != sender) {
+        /// @dev Index 0 will always be the tokenId owner.
+        if (i == 0) {
             return endorsement;
         }
         return endorsementInfo[tokenId][i];
@@ -196,19 +214,41 @@ contract Badge is ERC721URIStorage, Ownable2Step {
     function getEndorsementsTotal(
         uint256 tokenId
     ) external view returns (uint256) {
-        return endorsementInfo[tokenId].length  - revoked[tokenId];
+        return endorsementInfo[tokenId].length - (1 + revoked[tokenId]);
     }
 
     function getEndorsementInfoTotal(
         uint256 tokenId
     ) external view returns (uint256) {
-        return endorsementInfo[tokenId].length;
+        return endorsementInfo[tokenId].length - 1;
     }
 
     function getEndorsements(
         uint256 tokenId
     ) external view returns (EndorsementInfo[] memory) {
         return endorsementInfo[tokenId];
+    }
+
+    function get20Endorsements(
+        uint256 tokenId,
+        uint256 offset
+    ) external view returns (EndorsementInfo[20] memory endorsements) {
+
+        uint j;
+        if (endorsementInfo[tokenId].length - 1 < offset) {
+            return endorsements;
+        }
+        for (uint i = endorsementInfo[tokenId].length - (offset + 1); i > 0; i--) {
+            if (endorsementInfo[tokenId][i].status == EndorsementStatus(2)) {
+                continue;
+            }
+            endorsements[j] = endorsementInfo[tokenId][i];
+            j++;
+            if (j == 20) {
+                break;
+            }
+        }
+        return endorsements;
     }
 
     /*//////////////////////////////////////////////////////////////
