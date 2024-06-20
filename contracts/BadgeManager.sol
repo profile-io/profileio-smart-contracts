@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
     |  __/|    /| \_/|| |   | || |_/\|  /_ __| || \_/|
     \_/   \_/\_\\____/\_/   \_/\____/\____\\/\_/\____/
 
-    @author Sam Goodenough, Tabled Technologies Ltd.
+    @author Tabled Technologies Ltd.
     @title  Badge Manager
     @notice Administratpr functions for setting fees and
             approval of payments.

@@ -24,12 +24,17 @@ module.exports = {
     polygonAmoy: {
       url: `https://polygon-amoy.infura.io/v3/${INFURA_API_KEY}`,
       accounts: [`${PRIV_KEY}`],
+    },
+    polygon: {
+      url: `https://polygon-mainnet.infura.io/v3/${INFURA_API_KEY}`,
+      accounts: [`${PRIV_KEY}`],
     }
   },
   etherscan: {
     apiKey: {
       sepolia: `${ETHERSCAN_API_KEY}`,
-      polygonAmoy: `${POLYGONSCAN_API_KEY}`
+      polygonAmoy: `${POLYGONSCAN_API_KEY}`,
+      polygon: `${POLYGONSCAN_API_KEY}`
     },
     customChains: [
       {

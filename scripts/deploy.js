@@ -18,21 +18,21 @@ async function main() {
     // console.log('Contract deployed to: ', await erc20Token.getAddress())
 
     // Deploy Badge Manager contract.
-    // const BadgeManager = await ethers.getContractFactory("BadgeManager")
-    // const badgeManager = await BadgeManager.deploy(
-    //     owner.getAddress(),
-    //     "0xaB7547204a9442AD9d829dA1FB044794816EcdE6",
-    //     "5000000" // 5 USDC mint fee.
-    // )
-    // await badgeManager.waitForDeployment()
-    // console.log("Badge Manager contract deployed to: ", await badgeManager.getAddress())
+    const BadgeManager = await ethers.getContractFactory("BadgeManager")
+    const badgeManager = await BadgeManager.deploy(
+        owner.getAddress(),
+        // "0xaB7547204a9442AD9d829dA1FB044794816EcdE6",
+        "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", // mainnet USDC
+        "500000" // 0.5 USDC mint fee.
+    )
+    await badgeManager.waitForDeployment()
+    console.log("Badge Manager contract deployed to: ", await badgeManager.getAddress())
 
     // Deploy SBNFT Badge contract.
     const Badge = await ethers.getContractFactory("Badge")
     const badge = await Badge.deploy(
         owner.getAddress(),
-        // await badgeManager.getAddress()
-        "0xB470EE20D55dBdc44236d9F17bB14e56f622D67c"
+        await badgeManager.getAddress()
     )
     await badge.waitForDeployment()
     console.log("Badge NFT contract deployed to: ", await badge.getAddress())
