@@ -128,7 +128,7 @@ describe('Soulbound NFT Badge', function() {
 
         console.log("Endorsements total: ", await badge.getEndorsementsTotal(0))
 
-        console.log("getEndorsements: ", await badge.getEndorsements(0))
+        // console.log("getEndorsements: ", await badge.getEndorsements(0))
 
         const cBadge = badge.connect(charlieSigner)
         await cBadge.endorse(0)
@@ -136,7 +136,7 @@ describe('Soulbound NFT Badge', function() {
 
         console.log("Endorsements total: ", await badge.getEndorsementsTotal(0))
 
-        console.log("getEndorsements: ", await badge.getEndorsements(0))
+        // console.log("getEndorsements: ", await badge.getEndorsements(0))
 
         const dBadge = badge.connect(daveSigner)
         await dBadge.endorse(0)
@@ -151,9 +151,13 @@ describe('Soulbound NFT Badge', function() {
 
         console.log("Endorsements info total: ", await badge.getEndorsementInfoTotal(0))
 
-        console.log("getEndorsements: ", await badge.getEndorsements(0))
+        // console.log("getEndorsements: ", await badge.getEndorsements(0))
 
-        console.log("get20MostRecentEndorsements: ", await badge.get20Endorsements(0, 2))
+        console.log("get20MostRecentEndorsements: ", await badge.get20Endorsements(
+            0, //tokenId
+            4, // offset by index
+            false // skipRevoked
+        ))
     })
 
     // it("Should show endorsements", async function() {
