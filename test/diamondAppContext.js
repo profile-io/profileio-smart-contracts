@@ -110,17 +110,19 @@ describe('Test Profileio Diamond', function () {
 
         const profileIo = (await ethers.getContractAt("Profileio", await diamond.getAddress())).connect(signer)
 
-        // Set mint enabled for the Badge in the diamond.
+        // Set mint and endorsement enabled for the Badge in the diamond.
         await profileIo.setMintEnabled(await badge.getAddress(), 1)
+        await profileIo.setEndorsementEnabled(await badge.getAddress(), 1)
 
-        return { owner, usdc, badge, diamond, profileIo, feeCollector }
+        return { owner, usdc, badge, diamond, profileIo, feeCollector, backupOwner }
     }
 
-    it("Should mint badge", async function () {
+    it("Should mint + endorse badge", async function () {
 
-        const { owner, usdc, badge, profileIo, feeCollector } = await loadFixture(deploy)
+        const { owner, usdc, badge, profileIo, feeCollector, backupOwner } = await loadFixture(deploy)
 
         // Mint is executed by Profileio wallet (owner in this case).
+        // Note that it is the BE's responsibility to ensure that the account submitting the request has mint permissions.
         // First test with no payer.
         await profileIo.mint(
             await badge.getAddress(), // badge
@@ -142,5 +144,26 @@ describe('Test Profileio Diamond', function () {
         console.log("Badge minted")
 
         console.log("Fee collector balance: ", await usdc.balanceOf(await feeCollector.getAddress()))
+
+        const profileIo2 = (await ethers.getContractAt("Profileio", await profileIo.getAddress())).connect(backupOwner)
+
+        // Endorse badge
+        await profileIo2.endorse(
+            await badge.getAddress(), // badge
+            1 // tokenId
+        )
+        console.log("Badge endorsed")
+
+        console.log("Total endorsements: ", await profileIo2.getEndorsementsTotal(await badge.getAddress(), 1))
+
+        // Endorse badge
+        await profileIo2.revokeEndorsement(
+            await badge.getAddress(), // badge
+            1 // tokenId
+        )
+        console.log("Badge endorsed")
+
+        console.log("Total endorsements: ", await profileIo2.getEndorsementsTotal(await badge.getAddress(), 1))
+        console.log("Total endorsements info: ", await profileIo2.getEndorsementInfoTotal(await badge.getAddress(), 1))
     })
 })

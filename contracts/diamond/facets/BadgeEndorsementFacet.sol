@@ -18,17 +18,23 @@ import {LibEndorsement} from "../libs/LibEndorsement.sol";
  */
 
 contract BadgeEndorsementFacet is Modifiers {
-
     /// @return total The new total number of endorsements for the provided tokenId.
     /// @dev User interacts with the Diamond contract directly when doing endorsement actions.
     function endorse(
         IERC721 _badge,
         uint256 _tokenId
     ) external returns (uint256 total) {
-        // require(s.isBadge[_badge], "Badge: Invalid badge contract");
+        require(
+            s.badgeParams[address(_badge)].endorsementEnabled == 1,
+            "Badge: Endorsement disabled"
+        );
         require(
             _badge.ownerOf(_tokenId) != msg.sender,
             "Badge: Cannot endorse own badge"
+        );
+        require(
+            _badge.ownerOf(_tokenId) != address(0),
+            "Badge: Invalid tokenId"
         );
 
         EndorsementInfo memory endorsement = checkEndorsementInfo(
@@ -47,7 +53,10 @@ contract BadgeEndorsementFacet is Modifiers {
     }
 
     /// @dev NotSet => Endorsed.
-    function _endorse(address _badge, uint256 _tokenId) internal returns (uint256 total) {
+    function _endorse(
+        address _badge,
+        uint256 _tokenId
+    ) internal returns (uint256 total) {
         EndorsementInfo memory endorsement = EndorsementInfo({
             timestamp: block.timestamp,
             sender: msg.sender,
@@ -56,15 +65,21 @@ contract BadgeEndorsementFacet is Modifiers {
 
         uint k = uint(uint160(_badge)) + _tokenId;
 
-        s.endorsementInfoIndex[msg.sender][k] = s.endorsementInfo[_badge][_tokenId].length;
+        s.endorsementInfoIndex[msg.sender][k] = s
+        .endorsementInfo[_badge][_tokenId].length;
         s.endorsementInfo[_badge][_tokenId].push(endorsement);
 
         emit LibEndorsement.Endorsed(msg.sender, _badge, _tokenId);
-        return s.endorsementInfo[_badge][_tokenId].length - s.revoked[_badge][_tokenId];
+        return
+            s.endorsementInfo[_badge][_tokenId].length -
+            s.revoked[_badge][_tokenId];
     }
 
     /// @dev Revoked => Endorsed.
-    function _endorseUpdate(address _badge, uint256 _tokenId) internal returns (uint256 total) {
+    function _endorseUpdate(
+        address _badge,
+        uint256 _tokenId
+    ) internal returns (uint256 total) {
         uint k = uint(uint160(_badge)) + _tokenId;
 
         uint i = s.endorsementInfoIndex[msg.sender][k];
@@ -75,7 +90,9 @@ contract BadgeEndorsementFacet is Modifiers {
         s.revoked[_badge][_tokenId] -= 1;
 
         emit LibEndorsement.Endorsed(msg.sender, _badge, _tokenId);
-        return s.endorsementInfo[_badge][_tokenId].length - s.revoked[_badge][_tokenId];
+        return
+            s.endorsementInfo[_badge][_tokenId].length -
+            s.revoked[_badge][_tokenId];
     }
 
     /// @return total The new total number of endorsements for the provided tokenId.
@@ -84,8 +101,16 @@ contract BadgeEndorsementFacet is Modifiers {
         uint256 _tokenId
     ) external returns (uint256 total) {
         require(
+            s.badgeParams[address(_badge)].endorsementEnabled == 1,
+            "Badge: Endorsement disabled"
+        );
+        require(
             IERC721(_badge).ownerOf(_tokenId) != msg.sender,
             "Badge: Cannot revoke endorsement of own badge"
+        );
+        require(
+            IERC721(_badge).ownerOf(_tokenId) != address(0),
+            "Badge: Invalid tokenId"
         );
 
         uint k = uint(uint160(_badge)) + _tokenId;
@@ -96,7 +121,8 @@ contract BadgeEndorsementFacet is Modifiers {
             "Badge: Sender mismatch"
         );
         require(
-            s.endorsementInfo[_badge][_tokenId][i].status == EndorsementStatus(1),
+            s.endorsementInfo[_badge][_tokenId][i].status ==
+                EndorsementStatus(1),
             "Badge: Not endorsed"
         );
 
@@ -104,7 +130,9 @@ contract BadgeEndorsementFacet is Modifiers {
         s.endorsementInfo[_badge][_tokenId][i].status = EndorsementStatus(2);
         s.revoked[_badge][_tokenId] += 1;
         emit LibEndorsement.Revoked(msg.sender, _badge, _tokenId);
-        return s.endorsementInfo[_badge][_tokenId].length - s.revoked[_badge][_tokenId];
+        return
+            s.endorsementInfo[_badge][_tokenId].length -
+            s.revoked[_badge][_tokenId];
     }
 
     /// @notice Returns the endorsement info for a given tokenId.
@@ -129,10 +157,15 @@ contract BadgeEndorsementFacet is Modifiers {
         address _badge,
         uint256 _tokenId
     ) external view returns (uint256) {
-        if (s.endorsementInfo[_badge][_tokenId].length == s.revoked[_badge][_tokenId]) {
+        if (
+            s.endorsementInfo[_badge][_tokenId].length ==
+            s.revoked[_badge][_tokenId]
+        ) {
             return 0;
         }
-        return s.endorsementInfo[_badge][_tokenId].length - (1 + s.revoked[_badge][_tokenId]);
+        return
+            s.endorsementInfo[_badge][_tokenId].length -
+            (1 + s.revoked[_badge][_tokenId]);
     }
 
     /// @notice Includes revoked endorsements.
@@ -164,13 +197,14 @@ contract BadgeEndorsementFacet is Modifiers {
             return endorsements;
         }
         for (
-            uint i =s.endorsementInfo[_badge][_tokenId].length - (_offset + 1);
+            uint i = s.endorsementInfo[_badge][_tokenId].length - (_offset + 1);
             i > 0;
             i--
         ) {
             if (
                 _skipRevoked &&
-                s.endorsementInfo[_badge][_tokenId][i].status == EndorsementStatus(2)
+                s.endorsementInfo[_badge][_tokenId][i].status ==
+                EndorsementStatus(2)
             ) {
                 continue;
             }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {BadgeParams, CustomMintParams, Modifiers} from "../libs/LibAppStorage.sol";
+import {BadgeParams, CustomMintParams, EndorsementInfo, EndorsementStatus, Modifiers} from "../libs/LibAppStorage.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/IBadge.sol";
 
@@ -34,7 +34,7 @@ contract BadgeManagerFacet is Modifiers {
         address _payer,
         address _to,
         string memory _tokenURI
-    ) external onlyController nonReentrant returns (uint256) {
+    ) external onlyController nonReentrant returns (uint256 tokenId) {
         require(
             s.badgeParams[_badge].mintEnabled == 1,
             "BadgeManagerFacet: Minting disabled for Badge"
@@ -61,7 +61,15 @@ contract BadgeManagerFacet is Modifiers {
         }
 
         // Mint the Badge
-        return IBadge(_badge).safeMint(_to, _tokenURI);
+        tokenId = IBadge(_badge).safeMint(_to, _tokenURI);
+
+        // Instantiate the endorsementInfo array.
+        EndorsementInfo memory endorsement = EndorsementInfo({
+            timestamp: block.timestamp,
+            sender: _to,
+            status: EndorsementStatus(1)
+        });
+        s.endorsementInfo[_badge][tokenId].push(endorsement);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -106,6 +114,15 @@ contract BadgeManagerFacet is Modifiers {
         return true;
     }
 
+    /// @dev Need to enable a Badge for minting.
+    function setEndorsementEnabled(
+        address _badge,
+        uint8 _enabled
+    ) external onlyAdmin returns (bool) {
+        s.badgeParams[_badge].endorsementEnabled = _enabled;
+        return true;
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 GETTERS
     //////////////////////////////////////////////////////////////*/
@@ -128,7 +145,7 @@ contract BadgeManagerFacet is Modifiers {
         }
         return (s.defaultMintPayment, s.defaultMintFee);
     }
-    
+
     function getDefaultMintFee() external view returns (uint256) {
         return s.defaultMintFee;
     }
@@ -137,9 +154,13 @@ contract BadgeManagerFacet is Modifiers {
         return s.defaultMintPayment;
     }
 
-    function getMintEnabled(
+    function getMintEnabled(address _badge) external view returns (uint8) {
+        return s.badgeParams[_badge].mintEnabled;
+    }
+
+    function getEndorsementEnabled(
         address _badge
     ) external view returns (uint8) {
-        return s.badgeParams[_badge].mintEnabled;
+        return s.badgeParams[_badge].endorsementEnabled;
     }
 }

@@ -6,6 +6,7 @@ import {LibDiamond} from ".././core/libs/LibDiamond.sol";
 struct BadgeParams {
     CustomMintParams customMintParams;
     uint8 mintEnabled;
+    uint8 endorsementEnabled;
 }
 
 struct CustomMintParams {
