@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {CustomMintParams, Modifiers} from "../libs/LibAppStorage.sol";
+import {BadgeParams, CustomMintParams, Modifiers} from "../libs/LibAppStorage.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/IBadge.sol";
 
@@ -64,21 +64,8 @@ contract BadgeManagerFacet is Modifiers {
         return IBadge(_badge).safeMint(_to, _tokenURI);
     }
 
-    /// @dev Use to check against the allowance prior to minting Badge.
-    function getMintParams(
-        address _badge
-    ) public view returns (address, uint256) {
-        if (s.customMintParams[_badge].enabled == 1) {
-            return (
-                s.customMintParams[_badge].mintPayment,
-                s.customMintParams[_badge].mintFee
-            );
-        }
-        return (s.defaultMintPayment, s.defaultMintFee);
-    }
-
     /*//////////////////////////////////////////////////////////////
-                                ADMIN
+                            ADMIN - SETTERS
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Sets a custom mint fee for the given Badge.
@@ -117,5 +104,42 @@ contract BadgeManagerFacet is Modifiers {
     ) external onlyAdmin returns (bool) {
         s.badgeParams[_badge].mintEnabled = _enabled;
         return true;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                GETTERS
+    //////////////////////////////////////////////////////////////*/
+
+    function getBadgeParams(
+        address _badge
+    ) external view returns (BadgeParams memory) {
+        return s.badgeParams[_badge];
+    }
+
+    /// @dev Use to check against the allowance prior to minting Badge.
+    function getMintParams(
+        address _badge
+    ) public view returns (address, uint256) {
+        if (s.customMintParams[_badge].enabled == 1) {
+            return (
+                s.customMintParams[_badge].mintPayment,
+                s.customMintParams[_badge].mintFee
+            );
+        }
+        return (s.defaultMintPayment, s.defaultMintFee);
+    }
+    
+    function getDefaultMintFee() external view returns (uint256) {
+        return s.defaultMintFee;
+    }
+
+    function getDefaultMintPayment() external view returns (address) {
+        return s.defaultMintPayment;
+    }
+
+    function getMintEnabled(
+        address _badge
+    ) external view returns (uint8) {
+        return s.badgeParams[_badge].mintEnabled;
     }
 }

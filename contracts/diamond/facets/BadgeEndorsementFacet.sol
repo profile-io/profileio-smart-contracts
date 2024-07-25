@@ -18,149 +18,163 @@ import {LibEndorsement} from "../libs/LibEndorsement.sol";
  */
 
 contract BadgeEndorsementFacet is Modifiers {
-    
+
     /// @return total The new total number of endorsements for the provided tokenId.
+    /// @dev User interacts with the Diamond contract directly when doing endorsement actions.
     function endorse(
         IERC721 _badge,
-        uint256 tokenId
+        uint256 _tokenId
     ) external returns (uint256 total) {
-        require(s.isBadge[_badge], "Badge: Invalid badge contract");
+        // require(s.isBadge[_badge], "Badge: Invalid badge contract");
         require(
-            _badge.ownerOf(tokenId) != msg.sender,
+            _badge.ownerOf(_tokenId) != msg.sender,
             "Badge: Cannot endorse own badge"
         );
 
         EndorsementInfo memory endorsement = checkEndorsementInfo(
             msg.sender,
-            tokenId
+            address(_badge),
+            _tokenId
         );
 
         if (endorsement.status == EndorsementStatus(0)) {
-            return _endorse(tokenId);
+            return _endorse(address(_badge), _tokenId);
         } else if (endorsement.status == EndorsementStatus(2)) {
-            return _endorseUpdate(tokenId);
+            return _endorseUpdate(address(_badge), _tokenId);
         } else {
-            revert("Badge: Already endorsed");
+            revert("BadgeEndorsementFacet: Already endorsed");
         }
     }
 
     /// @dev NotSet => Endorsed.
-    function _endorse(uint256 tokenId) internal returns (uint256 total) {
+    function _endorse(address _badge, uint256 _tokenId) internal returns (uint256 total) {
         EndorsementInfo memory endorsement = EndorsementInfo({
             timestamp: block.timestamp,
             sender: msg.sender,
             status: EndorsementStatus(1)
         });
 
-        s.endorsementInfoIndex[msg.sender][tokenId] = s.endorsementInfo[tokenId]
-            .length;
-        s.endorsementInfo[tokenId].push(endorsement);
+        uint k = uint(uint160(_badge)) + _tokenId;
 
-        emit LibEndorsement.Endorsed(msg.sender, tokenId);
-        return s.endorsementInfo[tokenId].length - s.revoked[tokenId];
+        s.endorsementInfoIndex[msg.sender][k] = s.endorsementInfo[_badge][_tokenId].length;
+        s.endorsementInfo[_badge][_tokenId].push(endorsement);
+
+        emit LibEndorsement.Endorsed(msg.sender, _badge, _tokenId);
+        return s.endorsementInfo[_badge][_tokenId].length - s.revoked[_badge][_tokenId];
     }
 
     /// @dev Revoked => Endorsed.
-    function _endorseUpdate(uint256 tokenId) internal returns (uint256 total) {
-        uint i = endorsementInfoIndex[msg.sender][tokenId];
+    function _endorseUpdate(address _badge, uint256 _tokenId) internal returns (uint256 total) {
+        uint k = uint(uint160(_badge)) + _tokenId;
 
-        endorsementInfo[tokenId][i].timestamp = block.timestamp;
-        endorsementInfo[tokenId][i].status = EndorsementStatus(1);
+        uint i = s.endorsementInfoIndex[msg.sender][k];
 
-        revoked[tokenId] -= 1;
+        s.endorsementInfo[_badge][_tokenId][i].timestamp = block.timestamp;
+        s.endorsementInfo[_badge][_tokenId][i].status = EndorsementStatus(1);
 
-        emit Endorsed(msg.sender, tokenId);
-        return endorsementInfo[tokenId].length - revoked[tokenId];
+        s.revoked[_badge][_tokenId] -= 1;
+
+        emit LibEndorsement.Endorsed(msg.sender, _badge, _tokenId);
+        return s.endorsementInfo[_badge][_tokenId].length - s.revoked[_badge][_tokenId];
     }
 
     /// @return total The new total number of endorsements for the provided tokenId.
     function revokeEndorsement(
-        uint256 tokenId
+        address _badge,
+        uint256 _tokenId
     ) external returns (uint256 total) {
         require(
-            ownerOf(tokenId) != msg.sender,
+            IERC721(_badge).ownerOf(_tokenId) != msg.sender,
             "Badge: Cannot revoke endorsement of own badge"
         );
 
-        uint i = endorsementInfoIndex[msg.sender][tokenId];
+        uint k = uint(uint160(_badge)) + _tokenId;
+        uint i = s.endorsementInfoIndex[msg.sender][k];
 
         require(
-            endorsementInfo[tokenId][i].sender == msg.sender,
+            s.endorsementInfo[_badge][_tokenId][i].sender == msg.sender,
             "Badge: Sender mismatch"
         );
         require(
-            endorsementInfo[tokenId][i].status == EndorsementStatus(1),
+            s.endorsementInfo[_badge][_tokenId][i].status == EndorsementStatus(1),
             "Badge: Not endorsed"
         );
 
-        endorsementInfo[tokenId][i].timestamp = block.timestamp;
-        endorsementInfo[tokenId][i].status = EndorsementStatus(2);
-        revoked[tokenId] += 1;
-        emit Revoked(msg.sender, tokenId);
-        return endorsementInfo[tokenId].length - revoked[tokenId];
+        s.endorsementInfo[_badge][_tokenId][i].timestamp = block.timestamp;
+        s.endorsementInfo[_badge][_tokenId][i].status = EndorsementStatus(2);
+        s.revoked[_badge][_tokenId] += 1;
+        emit LibEndorsement.Revoked(msg.sender, _badge, _tokenId);
+        return s.endorsementInfo[_badge][_tokenId].length - s.revoked[_badge][_tokenId];
     }
 
     /// @notice Returns the endorsement info for a given tokenId.
     function checkEndorsementInfo(
-        address sender,
-        uint256 tokenId
+        address _sender,
+        address _badge,
+        uint256 _tokenId
     ) public view returns (EndorsementInfo memory endorsement) {
-        uint i = endorsementInfoIndex[sender][tokenId];
+        /// @dev Get k in (k,v) mapping by concatenating the address and tokenId.
+        uint k = uint(uint160(_badge)) + _tokenId;
+        uint i = s.endorsementInfoIndex[_sender][k];
 
         /// @dev Index 0 will always be the tokenId owner.
         if (i == 0) {
             return endorsement;
         }
-        return endorsementInfo[tokenId][i];
+        return s.endorsementInfo[_badge][_tokenId][i];
     }
 
     /// @notice Returns the actual number of endorsements for a given tokenId.
     function getEndorsementsTotal(
-        uint256 tokenId
+        address _badge,
+        uint256 _tokenId
     ) external view returns (uint256) {
-        if (endorsementInfo[tokenId].length == revoked[tokenId]) {
+        if (s.endorsementInfo[_badge][_tokenId].length == s.revoked[_badge][_tokenId]) {
             return 0;
         }
-        return endorsementInfo[tokenId].length - (1 + revoked[tokenId]);
+        return s.endorsementInfo[_badge][_tokenId].length - (1 + s.revoked[_badge][_tokenId]);
     }
 
     /// @notice Includes revoked endorsements.
     function getEndorsementInfoTotal(
-        uint256 tokenId
+        address _badge,
+        uint256 _tokenId
     ) external view returns (uint256) {
-        if (endorsementInfo[tokenId].length == 0) {
+        if (s.endorsementInfo[_badge][_tokenId].length == 0) {
             return 0;
         }
-        return endorsementInfo[tokenId].length - 1;
+        return s.endorsementInfo[_badge][_tokenId].length - 1;
     }
 
     function getEndorsements(
-        uint256 tokenId
+        address _badge,
+        uint256 _tokenId
     ) external view returns (EndorsementInfo[] memory) {
-        return endorsementInfo[tokenId];
+        return s.endorsementInfo[_badge][_tokenId];
     }
 
     function get20Endorsements(
-        uint256 tokenId,
-        uint256 offset,
-        bool skipRevoked
+        address _badge,
+        uint256 _tokenId,
+        uint256 _offset,
+        bool _skipRevoked
     ) external view returns (EndorsementInfo[20] memory endorsements) {
         uint j;
-        if (endorsementInfo[tokenId].length - 1 < offset) {
+        if (s.endorsementInfo[_badge][_tokenId].length - 1 < _offset) {
             return endorsements;
         }
         for (
-            uint i = endorsementInfo[tokenId].length - (offset + 1);
+            uint i =s.endorsementInfo[_badge][_tokenId].length - (_offset + 1);
             i > 0;
             i--
         ) {
             if (
-                skipRevoked &&
-                endorsementInfo[tokenId][i].status == EndorsementStatus(2)
+                _skipRevoked &&
+                s.endorsementInfo[_badge][_tokenId][i].status == EndorsementStatus(2)
             ) {
                 continue;
             }
-            endorsements[j] = endorsementInfo[tokenId][i];
+            endorsements[j] = s.endorsementInfo[_badge][_tokenId][i];
             j++;
             if (j == 20) {
                 break;

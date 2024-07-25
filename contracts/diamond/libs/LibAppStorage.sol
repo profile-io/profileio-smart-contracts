@@ -20,46 +20,41 @@ enum EndorsementStatus {
     Revoked
 }
 
+/// @dev Instance of an endorsement.
 struct EndorsementInfo {
     uint256 timestamp; // Timestamp of the most recent status update.
     address sender;
     EndorsementStatus status;
 }
 
-struct EndorsementsInfo {
-    address badge;
-    uint256 tokenId;
-    uint256 index;
-}
-
 struct AppStorage {
+    /*//////////////////////////////////////////////////////////////
+                            BADGE MANAGEMENT
+    //////////////////////////////////////////////////////////////*/
     // The default mint fee.
     uint256 defaultMintFee;
     // If enabled, uses values set instead of the default.
     mapping(address => CustomMintParams) customMintParams;
     // The default ERC20 token used for mint payment.
     address defaultMintPayment;
-
+    // E.g., Badge contract => BadgeParams.
     mapping(address => BadgeParams) badgeParams;
 
+    /*//////////////////////////////////////////////////////////////
+                            ENDORSEMENTS
+    //////////////////////////////////////////////////////////////*/
     /// @dev We know the owner of the tokenId by calling ownerOf().
     /// @dev Can only push to this array when endorsing.
-    // E.g., Badge contract 0x1234... => tokenId 7 => [endorsement1, endorsement2, ...]
+    // NFT Address => tokenId => [endorsement1, endorsement2, ...]
     mapping(address => mapping(uint256 => EndorsementInfo[])) endorsementInfo;
-
-    // STRUCT(?) //
-
-
-    /// @dev Used to help keep track of total number of endorsements for a given tokenId.
-    // E.g., Badge contract 0x1234... => tokenId 7 => 3.
+    // E.g., Alice => (NFT address + tokenId) => index in endorsement info array.
+    mapping(address => mapping(uint256 => uint256)) endorsementInfoIndex;
+    // NFT Address => tokenId => total number of revoked endorsements.
     mapping(address => mapping(uint256 => uint256)) revoked;
 
-    /// @dev Enables quick verification of checking endorsement.
-    // E.g., 0x1234 ("Endorser/Sender") => tokenId 7 => index 21.
-    mapping(address => mapping(uint256 => uint256)) endorsementInfoIndex;
-
-    mapping(address => mapping(address => uint256)) endorsementCount;
-
+    /*//////////////////////////////////////////////////////////////
+                        ACCOUNT MANAGEMENT
+    //////////////////////////////////////////////////////////////*/
     address owner;
     address backupOwner;
     mapping(address => uint8) isAdmin;
@@ -67,9 +62,7 @@ struct AppStorage {
     address feeCollector;
     uint8 reentrantStatus;
 
-    address nftFactory;
-    //
-    
+    /* Add new storage here */
 }
 
 library LibAppStorage {
