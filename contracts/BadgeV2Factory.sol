@@ -23,12 +23,13 @@ contract BadgeV2Factory is Ownable2Step {
 
     address public diamond;
 
-    constructor(address _diamond, address _owner) Ownable(_owner) {
+    constructor(address _owner, address _diamond) Ownable(_owner) {
         diamond = _diamond;
     }
 
-    function createBadgeV2() external onlyOwner returns (address) {
+    function createBadge() external onlyOwner returns (address) {
         address[] memory args = new address[](2);
+        // Set the owner of the BadgeV2 contract as the owner of the factory.
         args[0] = owner();
         args[1] = diamond;
         BadgeV2 badge = new BadgeV2(args);

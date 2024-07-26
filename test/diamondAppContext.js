@@ -27,13 +27,14 @@ describe('Test Profileio Diamond', function () {
         await usdc.waitForDeployment()
         console.log("USDC deployed: ", await usdc.getAddress())
 
-        // Deploy Badge NFT
-        const Badge = await ethers.getContractFactory("BadgeV2")
-        const badge = await Badge.deploy([
-            await owner.getAddress()
-        ])
-        await badge.waitForDeployment()
-        console.log("Badge NFT deployed: ", await badge.getAddress())
+        /* Use Badge Factory instead */
+        // // Deploy Badge NFT
+        // const Badge = await ethers.getContractFactory("BadgeV2")
+        // const badge = await Badge.deploy([
+        //     await owner.getAddress()
+        // ])
+        // await badge.waitForDeployment()
+        // console.log("Badge NFT deployed: ", await badge.getAddress())
 
         /* Diamond deployment steps */
         // Deploy DiamondCutFacet
@@ -104,6 +105,22 @@ describe('Test Profileio Diamond', function () {
             throw Error(`Diamond upgrade failed: ${tx.hash}`)
         }
         console.log('Completed diamond cut')
+
+        // Deploy Badge Factory
+        const BadgeFactory = await ethers.getContractFactory("BadgeV2Factory")
+        const badgeFactory = await BadgeFactory.deploy(
+            await owner.getAddress(),
+            await diamond.getAddress()
+        )
+        await badgeFactory.waitForDeployment()
+        console.log("Badge Factory deployed: ", await badgeFactory.getAddress())
+
+        // Create Badge NFT Contract
+        await badgeFactory.createBadge();
+        const badgeAddr = await badgeFactory.badgeArray(0);
+        console.log("Badge contract created at: ", badgeAddr);
+
+        const badge = (await ethers.getContractAt("BadgeV2", badgeAddr)).connect(signer)
 
         // Set Diamond as authorized in Badge NFT contract.
         await badge.setAuthorized(await diamond.getAddress(), 1)
