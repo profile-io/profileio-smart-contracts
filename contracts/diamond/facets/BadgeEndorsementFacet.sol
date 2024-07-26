@@ -21,21 +21,10 @@ contract BadgeEndorsementFacet is Modifiers {
     /// @return total The new total number of endorsements for the provided tokenId.
     /// @dev User interacts with the Diamond contract directly when doing endorsement actions.
     function endorse(
-        IERC721 _badge,
+        address _badge,
         uint256 _tokenId
     ) external returns (uint256 total) {
-        require(
-            s.badgeParams[address(_badge)].endorsementEnabled == 1,
-            "Badge: Endorsement disabled"
-        );
-        require(
-            _badge.ownerOf(_tokenId) != msg.sender,
-            "Badge: Cannot endorse own badge"
-        );
-        require(
-            _badge.ownerOf(_tokenId) != address(0),
-            "Badge: Invalid tokenId"
-        );
+        badgeCheck(_badge, _tokenId);
 
         EndorsementInfo memory endorsement = checkEndorsementInfo(
             msg.sender,
@@ -100,18 +89,7 @@ contract BadgeEndorsementFacet is Modifiers {
         address _badge,
         uint256 _tokenId
     ) external returns (uint256 total) {
-        require(
-            s.badgeParams[address(_badge)].endorsementEnabled == 1,
-            "Badge: Endorsement disabled"
-        );
-        require(
-            IERC721(_badge).ownerOf(_tokenId) != msg.sender,
-            "Badge: Cannot revoke endorsement of own badge"
-        );
-        require(
-            IERC721(_badge).ownerOf(_tokenId) != address(0),
-            "Badge: Invalid tokenId"
-        );
+        badgeCheck(_badge, _tokenId);
 
         uint k = uint(uint160(_badge)) + _tokenId;
         uint i = s.endorsementInfoIndex[msg.sender][k];
@@ -215,5 +193,24 @@ contract BadgeEndorsementFacet is Modifiers {
             }
         }
         return endorsements;
+    }
+
+    function badgeCheck(
+        address _badge,
+        uint256 _tokenId
+    ) public view returns (bool) {
+        require(
+            s.badgeParams[_badge].endorsementEnabled == 1,
+            "Badge: Endorsement disabled"
+        );
+        require(
+            IERC721(_badge).ownerOf(_tokenId) != msg.sender,
+            "Badge: Cannot endorse own badge"
+        );
+        require(
+            IERC721(_badge).ownerOf(_tokenId) != address(0),
+            "Badge: Invalid tokenId"
+        );
+        return true;
     }
 }
