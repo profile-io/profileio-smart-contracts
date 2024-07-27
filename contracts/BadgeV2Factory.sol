@@ -28,11 +28,7 @@ contract BadgeV2Factory is Ownable2Step {
     }
 
     function createBadge() external onlyOwner returns (address) {
-        address[] memory args = new address[](2);
-        // Set the owner of the BadgeV2 contract as the owner of the factory.
-        args[0] = owner();
-        args[1] = diamond;
-        BadgeV2 badge = new BadgeV2(args);
+        BadgeV2 badge = new BadgeV2(owner(), diamond);
         badgeArray.push(badge);
         emit BadgeV2Created(address(badge), owner());
         return address(badge);

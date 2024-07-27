@@ -21,15 +21,12 @@ contract BadgeV2 is ERC721URIStorage, Ownable2Step {
 
     mapping(address => uint8) authorized;
 
-    /**
-     * @param _authorized List of authorized accounts. First index is the owner.
-     */
     constructor(
-        address[] memory _authorized
-    ) ERC721("Profile.io Badge", "BADGE") Ownable(_authorized[0]) {
-        for (uint i = 0; i < _authorized.length; i++) {
-            authorized[_authorized[i]] = 1;
-        }
+        address _owner,
+        address _diamond
+    ) ERC721("Profile.io Badge", "BADGE") Ownable(_owner) {
+        authorized[_owner] = 1;
+        authorized[_diamond] = 1;
     }
 
     /*//////////////////////////////////////////////////////////////

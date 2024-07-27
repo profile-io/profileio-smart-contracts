@@ -62,11 +62,11 @@ describe('Test Profileio Diamond', function () {
 
         // Deploy facets
         const FacetNames = [
-            "DiamondLoupeFacet",
-            "OwnershipFacet",
-            "AccountManagerFacet",
-            "BadgeEndorsementFacet",
-            "BadgeManagerFacet"
+            "DiamondLoupeFacet", // core diamond
+            "OwnershipFacet", // core diamond
+            "AccountManagerFacet", // application specific
+            "BadgeEndorsementFacet", // application specific
+            "BadgeManagerFacet" // application specific
         ]
         const cut = []
         for (const FacetName of FacetNames) {

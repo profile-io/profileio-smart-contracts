@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+/* Diamond specific */
 import {LibDiamond} from ".././core/libs/LibDiamond.sol";
+/* --- END Diamond specific --- */
 
 struct BadgeParams {
     CustomMintParams customMintParams;
@@ -30,7 +32,7 @@ struct EndorsementInfo {
 
 struct AppStorage {
     /*//////////////////////////////////////////////////////////////
-                            BADGE MANAGEMENT
+                            BADGE MANAGEMENT V1
     //////////////////////////////////////////////////////////////*/
     // The default mint fee.
     uint256 defaultMintFee;
@@ -42,7 +44,7 @@ struct AppStorage {
     mapping(address => BadgeParams) badgeParams;
 
     /*//////////////////////////////////////////////////////////////
-                            ENDORSEMENTS
+                            ENDORSEMENTS V1
     //////////////////////////////////////////////////////////////*/
     /// @dev We know the owner of the tokenId by calling ownerOf().
     /// @dev Can only push to this array when endorsing.
@@ -54,7 +56,7 @@ struct AppStorage {
     mapping(address => mapping(uint256 => uint256)) revoked;
 
     /*//////////////////////////////////////////////////////////////
-                        ACCOUNT MANAGEMENT
+                        ACCOUNT MANAGEMENT V1
     //////////////////////////////////////////////////////////////*/
     address owner;
     address backupOwner;
@@ -63,9 +65,11 @@ struct AppStorage {
     address feeCollector;
     uint8 reentrantStatus;
 
-    /* Add new storage here */
+    /* Add new V2 storage here */
+    uint256 redemptionFee;
 }
 
+/* -- Diamond specific --- */
 library LibAppStorage {
     function diamondStorage() internal pure returns (AppStorage storage ds) {
         // bytes32 position = LibDiamond.DIAMOND_STORAGE_POSITION;
@@ -78,6 +82,7 @@ library LibAppStorage {
         return uint256(x_ >= 0 ? x_ : -x_);
     }
 }
+/* -- END --- */
 
 contract Modifiers {
     AppStorage internal s;
