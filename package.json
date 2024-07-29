@@ -4,7 +4,8 @@
   "description": "Smart contracts for Profile.io",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npx hardhat test",
+    "hh-node": "npx hardhat node"
   },
   "author": "Sam Goodenough",
   "license": "ISC",
