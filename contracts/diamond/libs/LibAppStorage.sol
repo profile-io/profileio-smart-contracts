@@ -13,7 +13,7 @@ struct BadgeParams {
 
 struct CustomMintParams {
     uint256 mintFee;
-    address mintPayment;
+    address mintPayment;    // ex: USDC contract address, WETH contract address, 
     uint8 enabled;
 }
 
