@@ -28,24 +28,34 @@ async function main() {
     // await badgeManager.waitForDeployment()
     // console.log("Badge Manager contract deployed to: ", await badgeManager.getAddress())
 
-    const badgeManager = await ethers.getContractAt(
-        'BadgeManager', 
-        '0xB470EE20D55dBdc44236d9F17bB14e56f622D67c'
-    )
+    // const badgeManager = await ethers.getContractAt(
+    //     'BadgeManager', 
+    //     '0xB470EE20D55dBdc44236d9F17bB14e56f622D67c'
+    // )
 
     // Deploy SBNFT Badge contract.
-    const Badge = await ethers.getContractFactory("BadgeV1")
+    const BadgeFactory = await ethers.getContractFactory("BadgeV2Factory")
+    const badgeFactory = await BadgeFactory.deploy(
+        owner.getAddress(),
+            // await badgeManager.getAddress()
+            '0x3263B824E20faab50De043c68C14C107a3ee272a'
+    )
+    await badgeFactory.waitForDeployment()
+    console.log("Badge NFT contract deployed to: ", await badgeFactory.getAddress())
+
+    // Deploy SBNFT Badge contract.
+    const Badge = await ethers.getContractFactory("BadgeV2")
     const badge = await Badge.deploy(
         owner.getAddress(),
-        // await badgeManager.getAddress()
-        '0xB470EE20D55dBdc44236d9F17bB14e56f622D67c'
+            // await badgeManager.getAddress()
+            '0x3263B824E20faab50De043c68C14C107a3ee272a'
     )
     await badge.waitForDeployment()
     console.log("Badge NFT contract deployed to: ", await badge.getAddress())
 
-    // Set Badge in Badge Manager contract.
-    await badgeManager.setBadge(await badge.getAddress(), 1)
-    console.log("Badge set")
+    // // Set Badge in Badge Manager contract.
+    // await badgeManager.setBadge(await badge.getAddress(), 1)
+    // console.log("Badge set")
 }
 
 // We recommend this pattern to be able to use async/await everywhere
