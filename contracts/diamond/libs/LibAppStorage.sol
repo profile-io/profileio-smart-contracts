@@ -66,7 +66,6 @@ struct AppStorage {
     uint8 reentrantStatus;
 
     /* Add new V2 storage here */
-    uint256 redemptionFee;
 }
 
 /* -- Diamond specific --- */
