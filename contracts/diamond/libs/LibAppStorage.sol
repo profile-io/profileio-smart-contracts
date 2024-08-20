@@ -66,6 +66,7 @@ struct AppStorage {
     uint8 reentrantStatus;
 
     /* Add new V2 storage here */
+    // Keep in mind that even if you delete a facet, storage variable will remaining. DO NOT DELETE variables here
 }
 
 /* -- Diamond specific --- */
