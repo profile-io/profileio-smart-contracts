@@ -6,6 +6,7 @@
   "scripts": {
     "test": "npx hardhat test",
     "coverage": "npx hardhat coverage"
+    "hh-node": "npx hardhat node"
   },
   "author": "Sam Goodenough",
   "license": "ISC",
