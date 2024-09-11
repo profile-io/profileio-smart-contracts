@@ -170,12 +170,18 @@ contract BadgeEndorsementFacet is Modifiers {
         uint256 _offset,
         bool _skipRevoked
     ) external view returns (EndorsementInfo[20] memory endorsements) {
+        uint256 endorsersNumber = s.endorsementInfo[_badge][_tokenId].length;
         uint j;
-        if (s.endorsementInfo[_badge][_tokenId].length - 1 < _offset) {
-            return endorsements;
+
+        /**
+         * NOTE: '-1' is for instantiate item (check BadgeManagerFacet.sol)
+         */
+        if (endorsersNumber == 0 || endorsersNumber - 1 < _offset) {
+            return endorsements;    // This returns 20 empty (0x000...) items
         }
+
         for (
-            uint i = s.endorsementInfo[_badge][_tokenId].length - (_offset + 1);
+            uint i = endorsersNumber - (_offset + 1);
             i > 0;
             i--
         ) {

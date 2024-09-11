@@ -13,7 +13,7 @@ struct BadgeParams {
 
 struct CustomMintParams {
     uint256 mintFee;
-    address mintPayment;
+    address mintPayment;    // ex: USDC contract address, WETH contract address, 
     uint8 enabled;
 }
 
@@ -66,7 +66,7 @@ struct AppStorage {
     uint8 reentrantStatus;
 
     /* Add new V2 storage here */
-    uint256 redemptionFee;
+    // Keep in mind that even if you delete a facet, storage variable will remaining. DO NOT DELETE variables here
 }
 
 /* -- Diamond specific --- */

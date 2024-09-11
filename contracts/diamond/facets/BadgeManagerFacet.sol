@@ -41,10 +41,12 @@ contract BadgeManagerFacet is Modifiers {
         );
 
         // Handle the mint payment if applicable.
+        // the below case is "non-subsidy case"
         if (_payer != address(0)) {
             address mintPayment = s.defaultMintPayment;
             uint256 mintFee = s.defaultMintFee;
             if (s.badgeParams[_badge].customMintParams.enabled == 1) {
+                // In case, badge creator selected other than USDC contract (ex: WETH contract 0.1 ETH instead of 0.5 USDC)
                 mintPayment = s
                     .badgeParams[_badge]
                     .customMintParams
