@@ -9,7 +9,7 @@ async function main() {
 
     const accounts = await ethers.getSigners()
     const owner = accounts[0]
-    const backupOwner = "0x2Ba6b1596178107c464DF8F04BB64AC07629b0c3" // taewha
+    const backupOwner = "0x3371187a386866dd4bf373D7BFcE0cC734AAB780" // taehwa
     const feeCollector = accounts[0]
 
     const signer = (await ethers.provider.getSigner(0))
@@ -108,6 +108,8 @@ async function main() {
     // Set mint and endorsement enabled for the Badge in the diamond.
     await profileIo.setMintEnabled(await badge.getAddress(), 1)
     await profileIo.setEndorsementEnabled(await badge.getAddress(), 1)
+
+    console.log('Profile.io:: Deployment finished.');
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -3,6 +3,7 @@
 const { getSelectors, FacetCutAction } = require("../scripts/libs/diamond.js")
 const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers")
 const { ethers } = require('hardhat')
+const { expect } = require("chai");
 
 const NULL_ADDR = "0x0000000000000000000000000000000000000000"
 
@@ -169,18 +170,64 @@ describe('Test Profileio Diamond', function () {
             await badge.getAddress(), // badge
             1 // tokenId
         )
-        console.log("Badge endorsed")
+        console.log("Badge (tokenId: 1) endorsed")
 
         console.log("Total endorsements: ", await profileIo2.getEndorsementsTotal(await badge.getAddress(), 1))
 
-        // Endorse badge
+        console.log("Total endorsements: ", await profileIo2.getEndorsementsTotal(await badge.getAddress(), 1))
+        console.log("Total endorsements info: ", await profileIo2.getEndorsementInfoTotal(await badge.getAddress(), 1))
+
+        // TODO: move endorsement test out of mint test
+        /**
+         * When there are endorsers
+         */
+        const endorserList = await profileIo2.get20Endorsements(await badge.getAddress(), 1, 0, false);
+
+        expect(endorserList[0][2]).to.equal(1, 'endorserList[0][2] is the first items EndorsementStatus and it should be 1 which means "Endorsed"')
+
+        // Revoking Endorse badge
         await profileIo2.revokeEndorsement(
             await badge.getAddress(), // badge
             1 // tokenId
         )
-        console.log("Badge endorsed")
 
-        console.log("Total endorsements: ", await profileIo2.getEndorsementsTotal(await badge.getAddress(), 1))
-        console.log("Total endorsements info: ", await profileIo2.getEndorsementInfoTotal(await badge.getAddress(), 1))
+        const endorserListWithRevokedItem = await profileIo2.get20Endorsements(await badge.getAddress(), 1, 0, false);
+        expect(endorserListWithRevokedItem[0][2]).to.equal(2, 'endorserList[0][2] is the first items EndorsementStatus and it should be 1 which means "Revoked"')
+
+        /**
+         * In case badge address is a wrong one
+         */
+        const randomContactAddress = '0x3263B824E20faab50De043c68C14C107a3ee272a';  // random address for test
+        const emptyEndorserList = await profileIo2.get20Endorsements(randomContactAddress, 1, 0, false);
+
+        expect(emptyEndorserList.length === 20, "it has to be 20 items");
+
+        const isAllEmptyAddress = emptyEndorserList.every(item => item[1] === NULL_ADDR);
+
+        expect(isAllEmptyAddress === true, 'since the badge contract is the wrong one, returned address should be all empty address');
+        
+        for(const list of emptyEndorserList ) {
+            expect(list[0]).to.equal(0, 'list[0] is timestamp and since the badge contract is the wrong one, it has to be 0');
+            expect(list[2]).to.equal(0, 'list[2] is "EndorsementStatus" and since the badge contract is the wrong one, it has to be 0 which is "NotSet"');
+        }
+    })
+
+    it('should set mint params', async () => {
+        const { badge, profileIo } = await loadFixture(deploy)
+        const randomContactAddress = '0x3263B824E20faab50De043c68C14C107a3ee272a';  // random address for test
+        const badgeAddress = await badge.getAddress();
+
+        await profileIo.setCustomMintParams(
+            badgeAddress, // badge
+            42, // mintFee
+            randomContactAddress, // mintPayment
+            1, // enabled
+        )
+
+        const params = await profileIo.getMintParams(badgeAddress);
+        const [mintPaymentAddress, mintFee] = params;
+
+        expect(mintPaymentAddress).to.equal(randomContactAddress);
+        expect(mintFee).to.equal(42);
     })
 })
