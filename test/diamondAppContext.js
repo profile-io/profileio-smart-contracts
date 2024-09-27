@@ -15,6 +15,7 @@ describe('Test Profileio Diamond', function () {
         const owner = accounts[0]
         const backupOwner = accounts[1]
         const feeCollector = accounts[2]
+        const normalUserA = accounts[3];
 
         const signer = (await ethers.provider.getSigner(0))
 
@@ -132,7 +133,7 @@ describe('Test Profileio Diamond', function () {
         await profileIo.setMintEnabled(await badge.getAddress(), 1)
         await profileIo.setEndorsementEnabled(await badge.getAddress(), 1)
 
-        return { owner, usdc, badge, diamond, profileIo, feeCollector, backupOwner }
+        return { owner, usdc, badge, diamond, profileIo, feeCollector, backupOwner, normalUserA }
     }
 
     it("Should mint + endorse badge", async function () {
@@ -229,5 +230,32 @@ describe('Test Profileio Diamond', function () {
 
         expect(mintPaymentAddress).to.equal(randomContactAddress);
         expect(mintFee).to.equal(42);
+    })
+
+    it('should not be able to send NFT since it is Soul Bound NFT', async () => {
+        const { owner, badge, profileIo, normalUserA } = await loadFixture(deploy)
+
+        await profileIo.mint(
+            await badge.getAddress(), // badge
+            NULL_ADDR, // payer
+            await owner.getAddress(), // to
+            "profile.io/api/badge/0" // tokenURI
+        )
+
+        const balanceOfOwner = await badge.balanceOf(owner);
+        const tokenIdOwnerAddress = await badge.ownerOf(0);
+        
+        console.log('owner: ', owner.address);
+        console.log('balanceOfOwner: ', balanceOfOwner);
+        console.log('tokenIdOwnerAddress: ', tokenIdOwnerAddress);
+        console.log('normalUserA:', normalUserA.address);
+        
+        // approve
+        await badge.approve(normalUserA, 0);
+        const approvedAddress = await badge.getApproved(0);
+        console.log('approvedAddress: ', approvedAddress);
+        
+        // transfer which should be failing. The 0 is the tokenId
+        await expect(badge.transferFrom(owner, normalUserA, 0)).to.be.revertedWith("Badge: Transfer failed");
     })
 })
